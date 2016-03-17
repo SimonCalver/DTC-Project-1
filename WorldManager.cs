@@ -20,6 +20,10 @@ public class WorldManager : MonoBehaviour {
 	float[] LandSurfaceHeight_accelerations;
 	float[] WaterSurfaceHeight_accelerations;
 
+	//Vectors for the bottomof the water and land 
+	float[] LandBottom;
+	float[] WaterBottom;
+
 	//This is for the circular geometry
 	float[] theta; 
 
@@ -42,15 +46,15 @@ public class WorldManager : MonoBehaviour {
 	public GameObject Water_mesh;
 
 	//All our constants
-	const float springconstant = 0.04f;
+	const float springconstant = 0.06f;
 	const float damping = 0.08f;
 	const float spread = 0.1f;
 
-	//The depth of the fluid, i.e. the difference between LandSurfaceHeight and WaterSurfaceHeight. Is itneccessary to store this?
+	//The depth of the fluid, i.e. the difference between LandSurfaceHeight and WaterSurfaceHeight. Is it neccessary to store this?
 	float[] depth;
 
 	//Set the number of nodes to be used
-	int nodecount = 500;
+	int nodecount = 600;
 
 	//Add a counter so that the land only moves for a short while after impact, this will do for now
 	public int impactCount;
@@ -65,6 +69,8 @@ public class WorldManager : MonoBehaviour {
 		LandSurfaceHeight_accelerations = new float[nodecount];
 		WaterSurfaceHeight_accelerations = new float[nodecount];
 		depth = new float[nodecount];
+		LandBottom = new float[nodecount];
+		WaterBottom = new float[nodecount];
 
 		//And also theta
 		theta = new float[nodecount];
@@ -72,31 +78,41 @@ public class WorldManager : MonoBehaviour {
 			theta [i] = 2 * i * Mathf.PI / (nodecount);
 		}
 
-		GameObject LandRenderer = new GameObject();
-		LandRenderer.name = "LandRenderer";
+//		GameObject LandRenderer = new GameObject();
+//		LandRenderer.name = "LandRenderer";
 
-		GameObject WaterRenderer = new GameObject();
-		WaterRenderer.name = "WaterRenderer";
+//		GameObject WaterRenderer = new GameObject();
+//		WaterRenderer.name = "WaterRenderer";
 
 		//Add our line renderers and set them up, it seems like passing them to a function to be initiated does not work
-		LandBody = LandRenderer.AddComponent<LineRenderer>();
-		LandBody.material = Land_mat;
-		LandBody.material.renderQueue = 1000;
-		LandBody.SetVertexCount(nodecount+1);
-		LandBody.SetWidth(0.1f, 0.1f);
+	//	LandBody = LandRenderer.AddComponent<LineRenderer>();
+//		LandBody.material = Land_mat;
+//		LandBody.material.renderQueue = 1000;
+//		LandBody.SetVertexCount(nodecount+1);
+//		LandBody.SetWidth(0.1f, 0.1f);
 
-		WaterBody = WaterRenderer.AddComponent<LineRenderer>();
-		WaterBody.material = Water_mat;
-		WaterBody.material.renderQueue = 1000;
-		WaterBody.SetVertexCount(nodecount+1);
-		WaterBody.SetWidth(0.1f, 0.1f);
+//		WaterBody = WaterRenderer.AddComponent<LineRenderer>();
+//		WaterBody.material = Water_mat;
+//		WaterBody.material.renderQueue = 1000;
+//		WaterBody.SetVertexCount(nodecount+1);
+//		WaterBody.SetWidth(0.1f, 0.1f);
 
+		RandomSurface ();
 
 		//Now set the initial positions of the surfaces
 		for (int i = 0; i < nodecount; i++)
 		{
-			depth [i] = 0;
-			LandSurfaceHeight[i] = 30;//+Mathf.Cos(i); //Because why not
+			if (i % 37 == 0) {
+				depth [i] = 40;
+			} else {
+				depth [i] = 0;
+			}
+
+		//	LandSurfaceHeight[i] = 30;//+Mathf.Cos(i); //Because why not
+
+			//Set the bottomof the Land so that it has a constant thickness
+			LandBottom[i] = LandSurfaceHeight[i] - 10;
+			WaterBottom [i] = 0;
 
 			//This is defined as depth of water plus height of land 
 			WaterSurfaceHeight[i] = depth [i] + LandSurfaceHeight[i];
@@ -107,19 +123,19 @@ public class WorldManager : MonoBehaviour {
 			WaterSurfaceHeight_accelerations[i] = 0;
 
 			//Set the line renderers
-			LandBody.SetPosition (i, new Vector3 (LandSurfaceHeight [i] * Mathf.Cos (theta [i]), 
-				LandSurfaceHeight [i] * Mathf.Sin (theta [i]), 0));
-			WaterBody.SetPosition (i, new Vector3 (WaterSurfaceHeight [i] * Mathf.Cos (theta [i]), 
-				WaterSurfaceHeight [i] * Mathf.Sin (theta [i]), 2));
+//			LandBody.SetPosition (i, new Vector3 (LandSurfaceHeight [i] * Mathf.Cos (theta [i]), 
+//				LandSurfaceHeight [i] * Mathf.Sin (theta [i]), 0));
+//			WaterBody.SetPosition (i, new Vector3 (WaterSurfaceHeight [i] * Mathf.Cos (theta [i]), 
+//				WaterSurfaceHeight [i] * Mathf.Sin (theta [i]), 2));
 		}
 
 		//Let's add some extra bits to the land and in general do more interesting stuff with that
 
-		for (int i = 200; i < nodecount-200; i++) {
-			depth [i] = 10;
-			LandSurfaceHeight [i] += 5;
-		}
-		for (int i = 0; i < 30; i++) {
+	//	for (int i = 200; i < nodecount-200; i++) {
+	//		depth [i] = 10;
+//			LandSurfaceHeight [i] += 5;
+//		}
+	/*	for (int i = 0; i < 30; i++) {
 			LandSurfaceHeight [nodecount-200+i] += (30-i)/3;
 		}
 		for (int i = 0; i < 30; i++) {
@@ -128,12 +144,16 @@ public class WorldManager : MonoBehaviour {
 		for (int i = nodecount-150; i < nodecount-125; i++) {
 			LandSurfaceHeight [i] -= 5;
 		}
+*/
+
+	
+
 
 		//Periodic boundaries so the end  of the line is the start
-		LandBody.SetPosition (nodecount, new Vector3 (LandSurfaceHeight [0] * Mathf.Cos (theta [0]), 
-			LandSurfaceHeight [0] * Mathf.Sin (theta [0]), 0));
-		WaterBody.SetPosition (nodecount, new Vector3 (WaterSurfaceHeight [0] * Mathf.Cos (theta [0]), 
-			WaterSurfaceHeight [0] * Mathf.Sin (theta [0]), 2));
+//		LandBody.SetPosition (nodecount, new Vector3 (LandSurfaceHeight [0] * Mathf.Cos (theta [0]), 
+	//		LandSurfaceHeight [0] * Mathf.Sin (theta [0]), 0));
+//		WaterBody.SetPosition (nodecount, new Vector3 (WaterSurfaceHeight [0] * Mathf.Cos (theta [0]), 
+//			WaterSurfaceHeight [0] * Mathf.Sin (theta [0]), 2));
 
 		Land_colliders = new GameObject[nodecount];
 		Water_colliders = new GameObject[nodecount];
@@ -172,15 +192,15 @@ public class WorldManager : MonoBehaviour {
 
 
 		//Spawn the land and then the water using the same function
-		SpawnMeshes(LandSurfaceHeight, 0, Land_mesh, Land_mat);  
-		SpawnMeshes(WaterSurfaceHeight, 2, Water_mesh, Water_mat);
+		SpawnMeshes(LandSurfaceHeight,LandBottom, 0, Land_mesh, Land_mat);  
+		SpawnMeshes(WaterSurfaceHeight,WaterBottom, 100, Water_mesh, Water_mat);
 	}
 
 
 	public void Splash( float brickVelocity, int index, float angle )
 	{
 		//Add the velocity of the falling object to the spring, it is towards the  origin 
-		WaterSurfaceHeight_velocities [index] -= brickVelocity/10.0f;
+		//WaterSurfaceHeight_velocities [index] -= brickVelocity/10.0f;
 
 		//Now also move some fluid away from the centre of the impact
 		if (index != 0 && index != nodecount) {
@@ -218,12 +238,12 @@ public class WorldManager : MonoBehaviour {
 
 		//Change surface here instead of in update
 		//WaterSurfaceHeight [index] += 3.0f * brickVelocity;
-		WaterBody.SetPosition (index, new Vector3 (WaterSurfaceHeight [index] * Mathf.Cos (theta [index]), WaterSurfaceHeight [index] * Mathf.Sin (theta [index]), 2));			
-		WaterBody.SetPosition (nodecount, new Vector3 (WaterSurfaceHeight [0] * Mathf.Cos (theta [0]), WaterSurfaceHeight [0] * Mathf.Sin (theta [0]), 2));
-		UpdateMeshes (WaterSurfaceHeight, Water_colliders, 2);
+//		WaterBody.SetPosition (index, new Vector3 (WaterSurfaceHeight [index] * Mathf.Cos (theta [index]), WaterSurfaceHeight [index] * Mathf.Sin (theta [index]), 2));			
+//		WaterBody.SetPosition (nodecount, new Vector3 (WaterSurfaceHeight [0] * Mathf.Cos (theta [0]), WaterSurfaceHeight [0] * Mathf.Sin (theta [0]), 2));
+		UpdateMeshes (WaterSurfaceHeight, WaterBottom, Water_colliders, 100);
 	}
 
-	public void SpawnMeshes (float[] r_positions, int z, GameObject mesh, Material mat)
+	public void SpawnMeshes (float[] r_positions, float[] bottom, int z, GameObject mesh, Material mat)
 	{
 		//Declare our mesh arrays
 		meshobjects = new GameObject[nodecount];
@@ -234,12 +254,12 @@ public class WorldManager : MonoBehaviour {
 			//Make the mesh
 			meshes [i] = new Mesh ();
 
-			//Create the corners of the mesh, I want all the meshes to extend to the origin so this is maybe abit stupid
+			//Create the corners of the mesh, I want all the meshes to extend to the origin so this is maybe a bit stupid
 			Vector3[] Vertices = new Vector3[4];
 			Vertices [0] = new Vector3 (r_positions [i] * Mathf.Cos (theta [i]), r_positions [i] * Mathf.Sin (theta [i]), z);
 			Vertices [1] = new Vector3 (r_positions [i + 1] * Mathf.Cos (theta [i + 1]), r_positions [i + 1] * Mathf.Sin (theta [i + 1]), z);
-			Vertices [2] = new Vector3 (0, 0, z);
-			Vertices [3] = new Vector3 (0, 0, z);
+			Vertices [2] = new Vector3 (bottom [i] * Mathf.Cos (theta [i]), bottom [i] * Mathf.Sin (theta [i]), z);
+			Vertices [3] = new Vector3 (bottom [i + 1] * Mathf.Cos (theta [i+1]), bottom [i + 1] * Mathf.Sin (theta [i + 1]), z);
 
 			//Set the UVs of the texture
 			Vector2[] UVs = new Vector2[4];
@@ -269,8 +289,8 @@ public class WorldManager : MonoBehaviour {
 		Vector3[] ConnectVertices = new Vector3[4];
 		ConnectVertices [0] = new Vector3 (r_positions [nodecount - 1] * Mathf.Cos (theta [nodecount - 1]), r_positions [nodecount - 1] * Mathf.Sin (theta [nodecount - 1]), z);
 		ConnectVertices [1] = new Vector3 (r_positions [0] * Mathf.Cos (theta [0]), r_positions [0] * Mathf.Sin (theta [0]), z);
-		ConnectVertices [2] = new Vector3 (0, 0, z);
-		ConnectVertices [3] = new Vector3 (0, 0, z);
+		ConnectVertices [2] = new Vector3 (bottom [nodecount - 1] * Mathf.Cos (theta [nodecount - 1]), bottom [nodecount - 1] * Mathf.Sin (theta [nodecount - 1]), z);
+		ConnectVertices [3] = new Vector3 (bottom [0] * Mathf.Cos (theta [0]), bottom [0] * Mathf.Sin (theta [0]), z);
 
 		//Set the UVs of the texture
 		Vector2[] ConnectUVs = new Vector2[4];
@@ -295,7 +315,7 @@ public class WorldManager : MonoBehaviour {
 
 
 	//Same as the code from in the meshes before, set the new mesh positions, could probably combine the two things so all the mesh stuff is in one functiom
-	void UpdateMeshes(float[] r_positions, GameObject[] colliders, int z)
+	void UpdateMeshes(float[] r_positions, float[] bottom, GameObject[] colliders, int z)
 	{
 		for (int i = 0; i < nodecount-1; i++)
 		{
@@ -303,8 +323,8 @@ public class WorldManager : MonoBehaviour {
 			Vector3[] Vertices = new Vector3[4];
 			Vertices [0] = new Vector3 (r_positions [i] * Mathf.Cos (theta [i]), r_positions [i] * Mathf.Sin (theta [i]), z);
 			Vertices [1] = new Vector3 (r_positions [i + 1] * Mathf.Cos (theta [i + 1]), r_positions [i + 1] * Mathf.Sin (theta [i + 1]), z);
-			Vertices [2] = new Vector3 (0, 0, z);
-			Vertices [3] = new Vector3 (0, 0, z);
+			Vertices [2] = new Vector3 (bottom [i] * Mathf.Cos (theta [i]), bottom [i] * Mathf.Sin (theta [i]), z);
+			Vertices [3] = new Vector3 (bottom [i + 1] * Mathf.Cos (theta [i + 1]), bottom [i + 1] * Mathf.Sin (theta [i + 1]), z);
 
 			meshes[i].vertices = Vertices;
 	
@@ -317,8 +337,8 @@ public class WorldManager : MonoBehaviour {
 		Vector3[] ConnectVertices = new Vector3[4];
 		ConnectVertices [0] = new Vector3 (r_positions [nodecount - 1] * Mathf.Cos (theta [nodecount - 1]), r_positions [nodecount - 1] * Mathf.Sin (theta [nodecount - 1]), z);
 		ConnectVertices [1] = new Vector3 (r_positions [0] * Mathf.Cos (theta [0]), r_positions [0] * Mathf.Sin (theta [0]), z);
-		ConnectVertices [2] = new Vector3 (0, 0, z);
-		ConnectVertices [3] = new Vector3 (0, 0, z);
+		ConnectVertices [2] = new Vector3 (bottom [nodecount - 1] * Mathf.Cos (theta [nodecount - 1]), bottom [nodecount - 1] * Mathf.Sin (theta [nodecount - 1]), z);
+		ConnectVertices [3] = new Vector3 (bottom [0] * Mathf.Cos (theta [0]), bottom [0] * Mathf.Sin (theta [0]), z);
 
 		meshes[nodecount-1].vertices = ConnectVertices;
 
@@ -428,37 +448,85 @@ public class WorldManager : MonoBehaviour {
 
 
 
-		for (int i = 1; i < nodecount-1; i++) {
+		for (int i = 0; i < nodecount; i++) {
 			//Spherical form	
 
 			//			float ratio = Mathf.Sqrt(Mathf.Pow (r_positions[i],2)/Mathf.Pow (theta_positions[i],2) + 1)/Mathf.Sqrt(Mathf.Pow (r_positions[i],2) + Mathf.Pow (theta_positions[i],2)); 
 			//			float xforce = 5f*springconstant*(r_positions[i] + r_floor[i]) + r_velocities[i]*damping; //*r_positions[i]*ratio*damping;			
 			//			float yforce = 5f*springconstant*(theta_positions[i] + theta_floor[i]) + theta_velocities[i]*damping;//*r_positions[i]*ratio*damping;
 			//Gravity don't work how I want
-			//Make it some surface is is at lowest point if there is no water here, i.e. level with lowest water next to it 
-			if (depth [i] > 0.0001) {
-				float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i] + depth [i])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
-				WaterSurfaceHeight_accelerations [i] = -r_force;
 
-				WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
-				WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
-			} else {
-				//Find local land gradient, sort of
-				if (LandSurfaceHeight [i + 1] - LandSurfaceHeight [i - 1] > 0) {
-					float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i - 1] + depth [i - 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+			//Make it some surface is is at lowest point if there is no water here, i.e. level with lowest water next to it 
+			if (i != 0 && i != nodecount - 1) {
+				if (depth [i] > 0.0001) {
+					float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i] + depth [i])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
 					WaterSurfaceHeight_accelerations [i] = -r_force;
 
 					WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
 					WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
 				} else {
-					float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i + 1] + depth [i + 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+					//Find local land gradient, sort of
+					if (LandSurfaceHeight [i + 1] - LandSurfaceHeight [i - 1] > 0) {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i - 1] + depth [i - 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					} else {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i + 1] + depth [i + 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					}
+				} //Take accountof the periodic boundary
+			} else if (i != 0) {
+				if (depth [i] > 0.0001) {
+					float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i] + depth [i])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
 					WaterSurfaceHeight_accelerations [i] = -r_force;
 
 					WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
 					WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+				} else {
+					//Find local land gradient, sort of
+					if (LandSurfaceHeight [0] - LandSurfaceHeight [i - 1] > 0) {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i - 1] + depth [i - 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					} else {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [0] + depth [0])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					}
+				}
+			} else {
+				if (depth [i] > 0.0001) {
+					float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i] + depth [i])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+					WaterSurfaceHeight_accelerations [i] = -r_force;
+
+					WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+					WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+				} else {
+					//Find local land gradient, sort of
+					if (LandSurfaceHeight [i + 1] - LandSurfaceHeight [nodecount - 1] > 0) {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [nodecount - 1] + depth [nodecount - 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					} else {
+						float r_force = springconstant * (WaterSurfaceHeight [i] - (LandSurfaceHeight [i + 1] + depth [i + 1])) + WaterSurfaceHeight_velocities [i] * damping; // + 0.01f*r_positions[i];
+						WaterSurfaceHeight_accelerations [i] = -r_force;
+
+						WaterSurfaceHeight [i] += WaterSurfaceHeight_velocities [i];
+						WaterSurfaceHeight_velocities [i] += WaterSurfaceHeight_accelerations [i];
+					}
 				}
 			}
-
 		}
 
 		/*
@@ -510,16 +578,16 @@ public class WorldManager : MonoBehaviour {
 
 		for(int i = 0; i<nodecount; i++){ total += depth [i];
 			//	WaterSurfaceHeight[i] = LandSurfaceHeight[i] + depth[i];
-			WaterBody.SetPosition(i, new Vector3(WaterSurfaceHeight[i]*Mathf.Cos(theta[i]), WaterSurfaceHeight[i]*Mathf.Sin(theta[i]), 2));
+//			WaterBody.SetPosition(i, new Vector3(WaterSurfaceHeight[i]*Mathf.Cos(theta[i]), WaterSurfaceHeight[i]*Mathf.Sin(theta[i]), 2));
 
 		} 
 
-		WaterBody.SetPosition(nodecount, new Vector3(WaterSurfaceHeight[0]*Mathf.Cos(theta[0]), WaterSurfaceHeight[0]*Mathf.Sin(theta[0]), 2));
+//		WaterBody.SetPosition(nodecount, new Vector3(WaterSurfaceHeight[0]*Mathf.Cos(theta[0]), WaterSurfaceHeight[0]*Mathf.Sin(theta[0]), 2));
 
 
 
 
-		UpdateMeshes(WaterSurfaceHeight, Water_colliders, 2);
+		UpdateMeshes(WaterSurfaceHeight, WaterBottom, Water_colliders, 100);
 
 
 
@@ -579,5 +647,124 @@ public class WorldManager : MonoBehaviour {
 		//You might want to even include a buoyancy constant unique to each object!
 	}
 
+	void RandomSurface()
+	{
+		float k = 0;
+		int count = 0;
+		bool m_up = false;
+		bool m_down = false;
+		bool o_up = false;
+		bool o_down = false;
+		float height = Random.Range (150, 160);
+
+
+		while (count < nodecount) {
+
+			// Make surface a little uneven
+			//float test = Random.Range (0.0f, 1.0f);
+			//if (test < 0.95) {
+
+			//Make mountains, randomly increase gradient for a little while then decrease it again	
+			float test = Random.Range (0.0f, 1.0f);
+
+			if (test > 0.95) {
+				m_up = true;
+				m_down = false;
+				o_up = false;
+				o_down = false;
+			} else if (test > 0.9) {
+				m_up = false;
+				m_down = true;
+				o_up = false;
+				o_down = false;
+			} else if (test > 0.85) {
+				m_up = false;
+				m_down = false;
+				o_up = true;
+				o_down = false;
+			}else if (test > 0.8) {
+				m_up = false;
+				m_down = false;
+				o_up = false;
+				o_down = true;
+			}
+
+
+			// If this number big enough enter mountain making mode
+			if (m_up == true) {
+				float u1 = Random.Range (0.0f, 1.0f); 
+				float u2 = Random.Range (0.0f, 1.0f);
+				float randStdNormal = 5.0f * Mathf.Sqrt (-2.0f * Mathf.Log (u1)) *
+				                      Mathf.Sin (2.0f * Mathf.PI * u2); //random normal(0,1)
+
+				LandSurfaceHeight [count] = height + randStdNormal;
+				k = randStdNormal;
+
+			} else if (m_down == true) {
+				float u1 = Random.Range (0.0f, 1.0f); 
+				float u2 = Random.Range (0.0f, 1.0f);
+				float randStdNormal = -5.0f + 1.2f * Mathf.Sqrt (-2.0f * Mathf.Log (u1)) *
+				                      Mathf.Sin (2.0f * Mathf.PI * u2); //random normal(0,1)
+				
+				LandSurfaceHeight [count] = height + randStdNormal;
+				k = randStdNormal;
+			} else {
+
+				float u1 = Random.Range (0.0f, 1.0f); 
+				float u2 = Random.Range (0.0f, 1.0f);
+				float randStdNormal = 1.2f * Mathf.Sqrt (-2.0f * Mathf.Log (u1)) *
+				                      Mathf.Sin (2.0f * Mathf.PI * u2); //random normal(0,1)
+
+				LandSurfaceHeight [count] = height + randStdNormal;
+				k = randStdNormal;
+			}
+
+
+
+
+
+				//} else {
+				//		float u1 = Random.Range (0.0f, 1.0f); //these are uniform(0,1) random doubles
+				//		float u2 = Random.Range (0.0f, 1.0f);
+				//		float randStdNormal = 2.2f * Mathf.Sqrt (-2.0f * Mathf.Log (u1)) *
+				//		                     Mathf.Sin (2.0f * Mathf.PI * u2); //random normal(0,1)
+
+				//		LandSurfaceHeight [count + 1] = LandSurfaceHeight [count] + randStdNormal;
+				//		k = randStdNormal;
+				//}
+
+
+
+			count++;
+		}
+
+		//Make mountains, randomly increase gradient for a little while then decrease it again
+
+
+
+
+
+
+
+
+
+		for (int j = 0; j < 1; j++) {
+			float[] LandSurfaceHeight_old = new float[nodecount];
+			// Average it out a bit
+			for (int i = 0; i < nodecount; i++) {
+				if (i == 0) {
+					LandSurfaceHeight_old [i] = (LandSurfaceHeight [nodecount - 1] + LandSurfaceHeight [i] + LandSurfaceHeight [i + 1]) / 3.0f;
+				} else if (i == nodecount - 1) {
+					LandSurfaceHeight_old [i] = (LandSurfaceHeight [i - 1] + LandSurfaceHeight [i] + LandSurfaceHeight [0]) / 3.0f;
+				} else {
+					LandSurfaceHeight_old [i] = (LandSurfaceHeight [i - 1] + LandSurfaceHeight [i] + LandSurfaceHeight [i + 1]) / 3.0f;
+				}
+			}
+
+			LandSurfaceHeight = LandSurfaceHeight_old;
+		}
+	}
+
 
 }
+	

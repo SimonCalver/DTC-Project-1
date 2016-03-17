@@ -5,6 +5,7 @@ public class MoveCamera : MonoBehaviour {
 
 	Quaternion rotation = Quaternion.Euler (0, 0, -90);
 
+	float radius = 100.0f;
 	float angle = 0.0f;
 	float zoom = 100.0f;
 	// Use this to iterate over surface points
@@ -23,9 +24,8 @@ public class MoveCamera : MonoBehaviour {
 	void Update () {
 
 		if (Input.GetKey ("left")) {
-			
-			// find radius from other code
-			float radius = 100.0f;
+
+			// seems like it might be a bad idea to have this increasing all the time
 			angle += Time.deltaTime;
 
 			Vector3 newPos = new Vector3 (radius * Mathf.Cos (angle), radius * Mathf.Sin (angle), -400.0f);
@@ -37,8 +37,6 @@ public class MoveCamera : MonoBehaviour {
 		}
 		if (Input.GetKey ("right")) {
 
-			// find radius from other code
-			float radius = 100.0f;
 			angle -= Time.deltaTime;
 
 			Vector3 newPos = new Vector3 (radius * Mathf.Cos (angle), radius * Mathf.Sin (angle), -400.0f);
@@ -48,7 +46,22 @@ public class MoveCamera : MonoBehaviour {
 			Quaternion newRotation = Quaternion.Euler (0, 0, 180/Mathf.PI*angle-90);
 			transform.rotation = newRotation;
 		}
-			
+		if (Input.GetKey ("up")) {
+
+			radius += 5.0f;
+
+			Vector3 newPos = new Vector3 (radius * Mathf.Cos (angle), radius * Mathf.Sin (angle), -400.0f);
+
+			transform.position = newPos;
+		}
+		if (Input.GetKey ("down")) {
+
+			radius -= 5.0f;
+
+			Vector3 newPos = new Vector3 (radius * Mathf.Cos (angle), radius * Mathf.Sin (angle), -400.0f);
+
+			transform.position = newPos;
+		}
 	}
 
 
