@@ -27,11 +27,12 @@ public class WorldManager : MonoBehaviour {
 	//This is for the circular geometry
 	float[] theta; 
 
-	//Our meshes and colliders, need colliders for each line renderer
+	//Our meshes and colliders, need colliders for each line renderer and mesh array for land and water
 	GameObject[] meshobjects;
 	GameObject[] Land_colliders;
 	GameObject[] Water_colliders;
-	Mesh[] meshes;
+	Mesh[] WaterMeshes;
+	Mesh[] LandMeshes;
 
 
 	//Our particle system
@@ -71,6 +72,11 @@ public class WorldManager : MonoBehaviour {
 		depth = new float[nodecount];
 		LandBottom = new float[nodecount];
 		WaterBottom = new float[nodecount];
+
+		//Declare our mesh arrays
+		//meshobjects = new GameObject[nodecount];
+		LandMeshes = new Mesh[nodecount];
+		WaterMeshes = new Mesh[nodecount];
 
 		//And also theta
 		theta = new float[nodecount];
@@ -192,8 +198,8 @@ public class WorldManager : MonoBehaviour {
 
 
 		//Spawn the land and then the water using the same function
-		SpawnMeshes(LandSurfaceHeight,LandBottom, 0, Land_mesh, Land_mat);  
-		SpawnMeshes(WaterSurfaceHeight,WaterBottom, 100, Water_mesh, Water_mat);
+		SpawnMeshes ( LandSurfaceHeight, LandBottom, 0, Land_mesh, Land_mat, LandMeshes );
+		SpawnMeshes ( WaterSurfaceHeight, WaterBottom, 100, Water_mesh, Water_mat, WaterMeshes );
 	}
 
 
@@ -203,7 +209,7 @@ public class WorldManager : MonoBehaviour {
 		//WaterSurfaceHeight_velocities [index] -= brickVelocity/10.0f;
 
 		//Now also move some fluid away from the centre of the impact
-		if (index != 0 && index != nodecount) {
+		if (index != 0 && index != nodecount-1) {
 			float displace = depth [index];
 			if (theta [index] > angle) {
 				depth [index] -= displace;
@@ -240,14 +246,19 @@ public class WorldManager : MonoBehaviour {
 		//WaterSurfaceHeight [index] += 3.0f * brickVelocity;
 //		WaterBody.SetPosition (index, new Vector3 (WaterSurfaceHeight [index] * Mathf.Cos (theta [index]), WaterSurfaceHeight [index] * Mathf.Sin (theta [index]), 2));			
 //		WaterBody.SetPosition (nodecount, new Vector3 (WaterSurfaceHeight [0] * Mathf.Cos (theta [0]), WaterSurfaceHeight [0] * Mathf.Sin (theta [0]), 2));
-		UpdateMeshes (WaterSurfaceHeight, WaterBottom, Water_colliders, 100);
+		UpdateMeshes ( WaterSurfaceHeight, WaterBottom, Water_colliders, 100, WaterMeshes );
 	}
 
-	public void SpawnMeshes (float[] r_positions, float[] bottom, int z, GameObject mesh, Material mat)
+	public void Impact ( float brickVelocity, int index, float angle ){
+
+		LandSurfaceHeight [index] -= 1.0f;
+		LandBottom [index] -= 1.0f;
+		UpdateMeshes (LandSurfaceHeight, LandBottom, Land_colliders, 0, LandMeshes);
+	}
+
+	public void SpawnMeshes ( float[] r_positions, float[] bottom, int z, GameObject mesh, Material mat, Mesh[] meshes )
 	{
-		//Declare our mesh arrays
 		meshobjects = new GameObject[nodecount];
-		meshes = new Mesh[nodecount];
 
 		//Setting the meshes now:
 		for (int i = 0; i < nodecount - 1; i++) {
@@ -315,8 +326,7 @@ public class WorldManager : MonoBehaviour {
 
 
 	//Same as the code from in the meshes before, set the new mesh positions, could probably combine the two things so all the mesh stuff is in one functiom
-	void UpdateMeshes(float[] r_positions, float[] bottom, GameObject[] colliders, int z)
-	{
+	void UpdateMeshes ( float[] r_positions, float[] bottom, GameObject[] colliders, int z, Mesh[] meshes ){
 		for (int i = 0; i < nodecount-1; i++)
 		{
 
@@ -587,7 +597,7 @@ public class WorldManager : MonoBehaviour {
 
 
 
-		UpdateMeshes(WaterSurfaceHeight, WaterBottom, Water_colliders, 100);
+		UpdateMeshes ( WaterSurfaceHeight, WaterBottom, Water_colliders, 100, WaterMeshes );
 
 
 
