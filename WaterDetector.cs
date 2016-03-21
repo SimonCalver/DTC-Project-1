@@ -17,7 +17,10 @@ public class WaterDetector : MonoBehaviour {
 			}
 			if(type == "LandTrigger")
 			{
-		//		transform.parent.GetComponent<LandCircle>().Splash(Hit.GetComponent<Rigidbody2D>().velocity.x*Hit.GetComponent<Rigidbody2D>().mass / 40f, Hit.GetComponent<Rigidbody2D>().velocity.y*Hit.GetComponent<Rigidbody2D>().mass / 40f,index);
+				transform.parent.GetComponent<WorldManager> ().Impact (Hit.GetComponent<Rigidbody2D> ().mass, 
+					index, Mathf.Atan2(Hit.GetComponent<Rigidbody2D> ().position.y,Hit.GetComponent<Rigidbody2D> ().position.x));
+				Destroy (Hit.GetComponent<Collider2D>()); 
+//				transform.parent.GetComponent<WorldManager>().Impact(Hit.GetComponent<Rigidbody2D>().velocity.x*Hit.GetComponent<Rigidbody2D>().mass / 40f, Hit.GetComponent<Rigidbody2D>().velocity.y*Hit.GetComponent<Rigidbody2D>().mass / 40f,index);
 		//		transform.parent.GetComponent<LandCircle>().impactCount = 5;
 			}
 		}

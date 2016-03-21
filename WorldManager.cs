@@ -55,7 +55,7 @@ public class WorldManager : MonoBehaviour {
 	float[] depth;
 
 	//Set the number of nodes to be used
-	int nodecount = 600;
+	int nodecount = 800;
 
 	//Add a counter so that the land only moves for a short while after impact, this will do for now
 	public int impactCount;
@@ -249,11 +249,37 @@ public class WorldManager : MonoBehaviour {
 		UpdateMeshes ( WaterSurfaceHeight, WaterBottom, Water_colliders, 100, WaterMeshes );
 	}
 
-	public void Impact ( float brickVelocity, int index, float angle ){
+	public void Impact ( float mass, int index, float angle ){
 
-		LandSurfaceHeight [index] -= 1.0f;
-		LandBottom [index] -= 1.0f;
+		//LandSurfaceHeight [index] -= 1.0f;
+		//LandBottom [index] -= 1.0f;
+
+		// The impact crater, the size depends on the mass
+		int size = 2*(int)mass; 
+		//print (size);
+		for (int i = index - size / 2; i < index + size / 2; i++) {
+
+			// Normalise to interval (0,1)
+			float iNorm = (float)(i - index + size / 2) / (size - 1); 
+			float mo = iNorm * (1 - iNorm) * Mathf.Exp (-50.0f * Mathf.Pow (iNorm - 0.5f, 2));//(i - start - baseSize / 2) * (i - start - baseSize / 2));
+
+			// Deal with the boundary
+			if (i < nodecount && i >= 0) {
+				LandSurfaceHeight [i] -= size * mo;
+				LandBottom [i] -= size * mo;
+			} else if (i < 0) {
+				LandSurfaceHeight [nodecount + i] -= size * mo;
+				LandBottom [nodecount + i] -= size * mo;
+			} else {
+				LandSurfaceHeight [i - nodecount] -= size * mo;
+				LandBottom [i - nodecount] -= size * mo;
+			}
+			print (iNorm);
+		}
+					
+	
 		UpdateMeshes (LandSurfaceHeight, LandBottom, Land_colliders, 0, LandMeshes);
+	
 	}
 
 	public void SpawnMeshes ( float[] r_positions, float[] bottom, int z, GameObject mesh, Material mat, Mesh[] meshes )
@@ -675,7 +701,7 @@ public class WorldManager : MonoBehaviour {
 			//if (test < 0.95) {
 
 			//Make mountains, randomly increase gradient for a little while then decrease it again	
-			float test = Random.Range (0.0f, 1.0f);
+			float test = Random.Range (0.0f, 0.8f);
 
 			if (test > 0.95) {
 				m_up = true;
@@ -752,13 +778,40 @@ public class WorldManager : MonoBehaviour {
 
 
 
+		// Now add a mountain, first choose size of base (how many nodes are covered) and steepness will depend on base size.
+		// Add uniform random numbers with larger range closer to centre
+
+		// Choose how many mountains
+		int no = Random.Range(0,7);
+		for (k = 0; k < no; k++) {
+			float baseSize = Random.Range (10, nodecount / 10);
+			int start = Random.Range (0, nodecount - 1);
+			int repeat = Random.Range(1,3);
+			for(int repeats = 0; repeats < repeat; repeats++) {
+				start += Random.Range (-20, 20);
+				for (int i = start; i < start + baseSize; i++) {
+					// Deal with the boundary
+					if (i < nodecount) {
+						// Normalise to interval (0,1)
+						float iNorm = (i - start) / (baseSize - 1); 
+						float mo = iNorm * (1 - iNorm) * Mathf.Exp (-50.0f * Mathf.Pow (iNorm - 0.5f, 2));//(i - start - baseSize / 2) * (i - start - baseSize / 2));
+						LandSurfaceHeight [i] += baseSize * mo + Random.Range (-0.5f, 1.0f); //((i - start) * (start + baseSize + 1 - i) * Mathf.Exp (-(i - start - baseSize / 2) * (i - start - baseSize / 2)) 
+					} else {
+						// Normalise to interval (0,1)
+						float iNorm = (i - start) / (baseSize - 1); 
+						float mo = iNorm * (1 - iNorm) * Mathf.Exp (-50.0f * Mathf.Pow (iNorm - 0.5f, 2));//(i - start - baseSize / 2) * (i - start - baseSize / 2));
+						LandSurfaceHeight [i - nodecount] += baseSize * mo + Random.Range (-0.5f, 1.0f); //((i - start) * (start + baseSize + 1 - i) * Mathf.Exp (-(i - start - baseSize / 2) * (i - start - baseSize / 2)) 
+					}
+				}
+			}
+		}
 
 
 
 
 
 
-		for (int j = 0; j < 1; j++) {
+		for (int j = 0; j < 2; j++) {
 			float[] LandSurfaceHeight_old = new float[nodecount];
 			// Average it out a bit
 			for (int i = 0; i < nodecount; i++) {
@@ -773,6 +826,8 @@ public class WorldManager : MonoBehaviour {
 
 			LandSurfaceHeight = LandSurfaceHeight_old;
 		}
+
+
 	}
 
 
